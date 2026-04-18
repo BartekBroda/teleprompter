@@ -129,3 +129,60 @@ scriptEl.addEventListener('input', () => {
   state.script = scriptEl.textContent;
   saveSetting('tp_script', state.script);
 });
+
+// ── Scroll engine ──
+
+function scrollStep() {
+  if (!state.playing || state.paused) return;
+
+  const maxScroll = contentWrapper.scrollHeight - contentWrapper.clientHeight;
+
+  if (contentWrapper.scrollTop >= maxScroll) {
+    stopScroll();
+    return;
+  }
+
+  contentWrapper.scrollTop += state.speed * 0.5;
+  updateProgress();
+  state.animFrameId = requestAnimationFrame(scrollStep);
+}
+
+function startScroll() {
+  if (state.playing) return;
+  state.playing = true;
+  state.paused = false;
+  btnStartStop.textContent = '⏸';
+  btnStartStop.setAttribute('aria-label', 'Pause');
+  scriptEl.contentEditable = 'false';
+  state.animFrameId = requestAnimationFrame(scrollStep);
+}
+
+function stopScroll() {
+  state.playing = false;
+  state.paused = false;
+  cancelAnimationFrame(state.animFrameId);
+  btnStartStop.textContent = '▶';
+  btnStartStop.setAttribute('aria-label', 'Play');
+  scriptEl.contentEditable = 'true';
+}
+
+function togglePause() {
+  if (!state.playing) return;
+  state.paused = !state.paused;
+  if (!state.paused) {
+    state.animFrameId = requestAnimationFrame(scrollStep);
+  }
+}
+
+// ── Progress (stub — implemented in Task 8) ──
+function updateProgress() {}
+
+// ── Start/Stop button ──
+
+btnStartStop.addEventListener('click', () => {
+  if (state.playing) {
+    stopScroll();
+  } else {
+    startScroll();
+  }
+});
