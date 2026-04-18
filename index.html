@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#000000">
+  <title>Teleprompter</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-dark">
+
+  <!-- Scrollable content area -->
+  <div id="content-wrapper">
+    <div
+      id="script"
+      contenteditable="true"
+      spellcheck="false"
+      data-placeholder="Type or paste your script..."
+    ></div>
+  </div>
+
+  <!-- Always-on-top overlay -->
+  <div id="overlay">
+    <button id="btn-settings" aria-label="Settings">⚙️</button>
+    <div id="progress-track" aria-hidden="true">
+      <div id="progress-dot"></div>
+    </div>
+    <button id="btn-start-stop" aria-label="Start">▶</button>
+  </div>
+
+  <!-- Settings modal -->
+  <div id="settings-modal" class="hidden" role="dialog" aria-modal="true">
+    <div id="settings-panel">
+      <h2>Settings</h2>
+
+      <label>
+        Font size: <span id="font-size-val">48</span>px
+        <input type="range" id="font-size" min="24" max="96" step="2" value="48">
+      </label>
+
+      <label>
+        Speed: <span id="speed-val">2</span>
+        <input type="range" id="speed" min="0.5" max="10" step="0.5" value="2">
+      </label>
+
+      <label class="toggle-row">
+        Mirror
+        <input type="checkbox" id="mirror">
+      </label>
+
+      <label class="toggle-row">
+        Light theme
+        <input type="checkbox" id="theme-toggle">
+      </label>
+
+      <button id="btn-close-settings">Close</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
