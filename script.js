@@ -174,8 +174,20 @@ function togglePause() {
   }
 }
 
-// ── Progress (stub — implemented in Task 8) ──
-function updateProgress() {}
+// ── Progress indicator ──
+
+function updateProgress() {
+  const maxScroll = contentWrapper.scrollHeight - contentWrapper.clientHeight;
+  if (maxScroll <= 0) {
+    progressDot.style.top = '6px';
+    return;
+  }
+  const trackHeight = progressDot.parentElement.clientHeight;
+  const dotRadius = 6;
+  const pct = contentWrapper.scrollTop / maxScroll;
+  const topPx = dotRadius + pct * (trackHeight - dotRadius * 2);
+  progressDot.style.top = topPx + 'px';
+}
 
 // ── Start/Stop button ──
 
@@ -194,3 +206,7 @@ contentWrapper.addEventListener('touchstart', (e) => {
   if (!state.playing) return;
   togglePause();
 }, { passive: true });
+
+// ── Update progress on manual scroll ──
+
+contentWrapper.addEventListener('scroll', updateProgress, { passive: true });
