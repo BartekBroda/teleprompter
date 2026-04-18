@@ -19,8 +19,8 @@ function loadSettings() {
   try {
     return {
       script:   localStorage.getItem('tp_script')    ?? DEFAULTS.script,
-      fontSize: Number(localStorage.getItem('tp_font_size'))  || DEFAULTS.fontSize,
-      speed:    Number(localStorage.getItem('tp_speed'))      || DEFAULTS.speed,
+      fontSize: Number(localStorage.getItem('tp_font_size') ?? DEFAULTS.fontSize),
+      speed:    Number(localStorage.getItem('tp_speed')     ?? DEFAULTS.speed),
       mirror:   localStorage.getItem('tp_mirror')    === 'true',
       theme:    localStorage.getItem('tp_theme')     ?? DEFAULTS.theme,
     };
