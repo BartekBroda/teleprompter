@@ -1,1 +1,217 @@
 /* Teleprompter styles */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: -apple-system, sans-serif;
+  touch-action: pan-y;
+}
+
+/* ── Themes ── */
+
+body.theme-dark {
+  --bg: #000;
+  --text: #fff;
+  --overlay-bg: rgba(0, 0, 0, 0.6);
+  --modal-bg: #1a1a1a;
+  --modal-text: #fff;
+  --btn-bg: rgba(255,255,255,0.15);
+  --btn-color: #fff;
+  --progress-track: rgba(255,255,255,0.2);
+  --progress-dot: #fff;
+}
+
+body.theme-light {
+  --bg: #fff;
+  --text: #000;
+  --overlay-bg: rgba(255, 255, 255, 0.6);
+  --modal-bg: #f5f5f5;
+  --modal-text: #000;
+  --btn-bg: rgba(0,0,0,0.1);
+  --btn-color: #000;
+  --progress-track: rgba(0,0,0,0.2);
+  --progress-dot: #000;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ── Content wrapper (mirrored here, not on overlay) ── */
+
+#content-wrapper {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 40px 60px 200px 20px; /* right padding leaves room for progress bar */
+}
+
+#content-wrapper.mirrored {
+  transform: scaleX(-1);
+}
+
+/* ── Script editable area ── */
+
+#script {
+  font-size: 48px;
+  line-height: 1.4;
+  color: var(--text);
+  min-height: 100vh;
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+#script:empty::before {
+  content: attr(data-placeholder);
+  color: rgba(128,128,128,0.6);
+  pointer-events: none;
+}
+
+/* ── Overlay ── */
+
+#overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none; /* clicks pass through to content */
+  z-index: 100;
+}
+
+#overlay > * {
+  pointer-events: auto; /* re-enable for actual buttons */
+}
+
+/* Settings button — top left */
+#btn-settings {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: var(--btn-bg);
+  color: var(--btn-color);
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Start/Stop button — bottom right */
+#btn-start-stop {
+  position: absolute;
+  bottom: 32px;
+  right: 16px;
+  width: 56px;
+  height: 56px;
+  border: none;
+  border-radius: 50%;
+  background: var(--btn-bg);
+  color: var(--btn-color);
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Progress track — vertical bar, right edge */
+#progress-track {
+  position: absolute;
+  top: 80px;
+  right: 8px;
+  bottom: 100px;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--progress-track);
+  pointer-events: none;
+}
+
+#progress-dot {
+  position: absolute;
+  left: 50%;
+  top: 0%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--progress-dot);
+  transition: top 0.1s linear;
+}
+
+/* ── Settings modal ── */
+
+#settings-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+}
+
+#settings-modal.hidden {
+  display: none;
+}
+
+#settings-panel {
+  background: var(--modal-bg);
+  color: var(--modal-text);
+  width: 100%;
+  padding: 24px 20px 40px;
+  border-radius: 16px 16px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+#settings-panel h2 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+#settings-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 16px;
+}
+
+#settings-panel label.toggle-row {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#settings-panel input[type="range"] {
+  width: 100%;
+  accent-color: var(--progress-dot);
+}
+
+#settings-panel input[type="checkbox"] {
+  width: 44px;
+  height: 24px;
+  accent-color: var(--progress-dot);
+}
+
+#btn-close-settings {
+  align-self: center;
+  padding: 12px 32px;
+  border: none;
+  border-radius: 8px;
+  background: var(--btn-bg);
+  color: var(--modal-text);
+  font-size: 16px;
+  cursor: pointer;
+}
