@@ -122,3 +122,10 @@ themeToggle.addEventListener('change', () => {
   document.body.className = 'theme-' + state.theme;
   saveSetting('tp_theme', state.theme);
 });
+
+// ── Script content persistence ──
+
+scriptEl.addEventListener('input', () => {
+  state.script = scriptEl.textContent;
+  saveSetting('tp_script', state.script);
+});
