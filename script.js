@@ -210,3 +210,11 @@ contentWrapper.addEventListener('touchstart', (e) => {
 // ── Update progress on manual scroll ──
 
 contentWrapper.addEventListener('scroll', updateProgress, { passive: true });
+
+// ── Service Worker registration ──
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
