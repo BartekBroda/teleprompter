@@ -66,20 +66,26 @@ function applyState() {
   document.body.className = 'theme-' + state.theme;
 }
 
-document.addEventListener('DOMContentLoaded', applyState);
+applyState();
 
 // ── Settings modal open/close ──
 
-btnSettings.addEventListener('click', () => {
+function openModal() {
   settingsModal.classList.remove('hidden');
-});
+  settingsModal.removeAttribute('inert');
+  btnCloseSettings.focus();
+}
 
-btnCloseSettings.addEventListener('click', () => {
+function closeModal() {
   settingsModal.classList.add('hidden');
-});
+  settingsModal.setAttribute('inert', '');
+  btnSettings.focus();
+}
 
+btnSettings.addEventListener('click', openModal);
+btnCloseSettings.addEventListener('click', closeModal);
 settingsModal.addEventListener('click', (e) => {
-  if (e.target === settingsModal) settingsModal.classList.add('hidden');
+  if (e.target === settingsModal) closeModal();
 });
 
 // ── Font size ──
