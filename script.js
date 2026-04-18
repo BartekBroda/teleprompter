@@ -67,3 +67,52 @@ function applyState() {
 }
 
 document.addEventListener('DOMContentLoaded', applyState);
+
+// ── Settings modal open/close ──
+
+btnSettings.addEventListener('click', () => {
+  settingsModal.classList.remove('hidden');
+});
+
+btnCloseSettings.addEventListener('click', () => {
+  settingsModal.classList.add('hidden');
+});
+
+settingsModal.addEventListener('click', (e) => {
+  if (e.target === settingsModal) settingsModal.classList.add('hidden');
+});
+
+// ── Font size ──
+
+fontSizeInput.addEventListener('input', () => {
+  const v = Number(fontSizeInput.value);
+  state.fontSize = v;
+  fontSizeVal.textContent = v;
+  scriptEl.style.fontSize = v + 'px';
+  saveSetting('tp_font_size', v);
+});
+
+// ── Speed ──
+
+speedInput.addEventListener('input', () => {
+  const v = Number(speedInput.value);
+  state.speed = v;
+  speedVal.textContent = v;
+  saveSetting('tp_speed', v);
+});
+
+// ── Mirror ──
+
+mirrorInput.addEventListener('change', () => {
+  state.mirror = mirrorInput.checked;
+  contentWrapper.classList.toggle('mirrored', state.mirror);
+  saveSetting('tp_mirror', state.mirror);
+});
+
+// ── Theme ──
+
+themeToggle.addEventListener('change', () => {
+  state.theme = themeToggle.checked ? 'light' : 'dark';
+  document.body.className = 'theme-' + state.theme;
+  saveSetting('tp_theme', state.theme);
+});
