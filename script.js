@@ -186,3 +186,11 @@ btnStartStop.addEventListener('click', () => {
     startScroll();
   }
 });
+
+// ── Touch to pause/resume ──
+
+contentWrapper.addEventListener('touchstart', (e) => {
+  if (e.target.closest('#overlay')) return;
+  if (!state.playing) return;
+  togglePause();
+}, { passive: true });
