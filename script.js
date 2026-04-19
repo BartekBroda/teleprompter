@@ -11,6 +11,7 @@ const DEFAULTS = {
 const state = {
   playing: false,
   paused: false,
+  atEnd: false,
   animFrameId: null,
   ...loadSettings(),
 };
@@ -140,7 +141,7 @@ function scrollStep() {
   const maxScroll = contentWrapper.scrollHeight - contentWrapper.clientHeight;
 
   if (contentWrapper.scrollTop >= maxScroll) {
-    stopScroll();
+    stopScroll(true);
     return;
   }
 
@@ -159,18 +160,22 @@ function startScroll() {
   state.animFrameId = requestAnimationFrame(scrollStep);
 }
 
-function stopScroll() {
+function stopScroll(atEnd = false) {
   state.playing = false;
   state.paused = false;
+  state.atEnd = atEnd;
   cancelAnimationFrame(state.animFrameId);
-  btnStartStop.textContent = '▶';
-  btnStartStop.setAttribute('aria-label', 'Play');
+  state.animFrameId = null;
+  btnStartStop.textContent = atEnd ? '↑' : '▶';
+  btnStartStop.setAttribute('aria-label', atEnd ? 'Back to top' : 'Play');
   scriptEl.contentEditable = 'true';
 }
 
 function togglePause() {
   if (!state.playing) return;
   state.paused = !state.paused;
+  btnStartStop.textContent = state.paused ? '▶' : '⏸';
+  btnStartStop.setAttribute('aria-label', state.paused ? 'Resume' : 'Pause');
   if (!state.paused && !state.animFrameId) {
     state.animFrameId = requestAnimationFrame(scrollStep);
   }
@@ -194,7 +199,12 @@ function updateProgress() {
 // ── Start/Stop button ──
 
 btnStartStop.addEventListener('click', () => {
-  if (state.playing) {
+  if (state.atEnd) {
+    state.atEnd = false;
+    contentWrapper.scrollTo({ top: 0, behavior: 'smooth' });
+    btnStartStop.textContent = '▶';
+    btnStartStop.setAttribute('aria-label', 'Play');
+  } else if (state.playing) {
     stopScroll();
   } else {
     startScroll();
