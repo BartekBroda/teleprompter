@@ -63,7 +63,8 @@ function applyState() {
   contentWrapper.classList.toggle('mirrored', state.mirror);
 
   themeToggle.checked = state.theme === 'light';
-  document.body.className = 'theme-' + state.theme;
+  document.body.classList.remove('theme-dark', 'theme-light');
+  document.body.classList.add('theme-' + state.theme);
 }
 
 applyState();
@@ -119,7 +120,8 @@ mirrorInput.addEventListener('change', () => {
 
 themeToggle.addEventListener('change', () => {
   state.theme = themeToggle.checked ? 'light' : 'dark';
-  document.body.className = 'theme-' + state.theme;
+  document.body.classList.remove('theme-dark', 'theme-light');
+  document.body.classList.add('theme-' + state.theme);
   saveSetting('tp_theme', state.theme);
 });
 
@@ -133,7 +135,7 @@ scriptEl.addEventListener('input', () => {
 // ── Scroll engine ──
 
 function scrollStep() {
-  if (!state.playing || state.paused) return;
+  if (!state.playing || state.paused) { state.animFrameId = null; return; }
 
   const maxScroll = contentWrapper.scrollHeight - contentWrapper.clientHeight;
 
@@ -169,7 +171,7 @@ function stopScroll() {
 function togglePause() {
   if (!state.playing) return;
   state.paused = !state.paused;
-  if (!state.paused) {
+  if (!state.paused && !state.animFrameId) {
     state.animFrameId = requestAnimationFrame(scrollStep);
   }
 }
