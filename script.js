@@ -6,6 +6,7 @@ const DEFAULTS = {
   speed: 2,
   mirror: false,
   theme: 'dark',
+  margin: 0,
 };
 
 const state = {
@@ -21,9 +22,10 @@ function loadSettings() {
     return {
       script:   localStorage.getItem('tp_script')    ?? DEFAULTS.script,
       fontSize: Number(localStorage.getItem('tp_font_size') ?? DEFAULTS.fontSize),
-      speed:    Number(localStorage.getItem('tp_speed')     ?? DEFAULTS.speed),
+      speed:    Math.min(5, Math.max(0.5, Number(localStorage.getItem('tp_speed') ?? DEFAULTS.speed))),
       mirror:   localStorage.getItem('tp_mirror')    === 'true',
       theme:    localStorage.getItem('tp_theme')     ?? DEFAULTS.theme,
+      margin:   Math.min(200, Math.max(0, Number(localStorage.getItem('tp_margin') ?? DEFAULTS.margin))),
     };
   } catch {
     return { ...DEFAULTS };
@@ -47,8 +49,14 @@ const fontSizeInput    = document.getElementById('font-size');
 const fontSizeVal      = document.getElementById('font-size-val');
 const speedInput       = document.getElementById('speed');
 const speedVal         = document.getElementById('speed-val');
+const marginInput      = document.getElementById('margin');
+const marginVal        = document.getElementById('margin-val');
 const mirrorInput      = document.getElementById('mirror');
 const themeToggle      = document.getElementById('theme-toggle');
+
+function applyMargin(v) {
+  document.documentElement.style.setProperty('--user-margin', v + 'px');
+}
 
 function applyState() {
   scriptEl.textContent = state.script;
@@ -59,6 +67,10 @@ function applyState() {
 
   speedInput.value = state.speed;
   speedVal.textContent = state.speed;
+
+  marginInput.value = state.margin;
+  marginVal.textContent = state.margin;
+  applyMargin(state.margin);
 
   mirrorInput.checked = state.mirror;
   contentWrapper.classList.toggle('mirrored', state.mirror);
@@ -109,6 +121,16 @@ speedInput.addEventListener('input', () => {
   saveSetting('tp_speed', v);
 });
 
+// ── Margin ──
+
+marginInput.addEventListener('input', () => {
+  const v = Number(marginInput.value);
+  state.margin = v;
+  marginVal.textContent = v;
+  applyMargin(v);
+  saveSetting('tp_margin', v);
+});
+
 // ── Mirror ──
 
 mirrorInput.addEventListener('change', () => {
@@ -133,20 +155,60 @@ scriptEl.addEventListener('input', () => {
   saveSetting('tp_script', state.script);
 });
 
-// ── Scroll engine ──
+// ── Markdown parser ──
 
-function scrollStep() {
-  if (!state.playing || state.paused) { state.animFrameId = null; return; }
+function inlineMarkdown(text) {
+  text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  return text;
+}
+
+function parseMarkdown(text) {
+  const html = [];
+  for (const line of text.split('\n')) {
+    const t = line.trim();
+    if (t === '---') { html.push('<hr>'); continue; }
+    const h = t.match(/^(#{1,2})\s+(.*)/);
+    if (h) { const tag = h[1].length === 1 ? 'h1' : 'h2'; html.push(`<${tag}>${inlineMarkdown(h[2])}</${tag}>`); continue; }
+    if (t === '') { html.push('<p class="md-gap"></p>'); continue; }
+    html.push(`<p>${inlineMarkdown(t)}</p>`);
+  }
+  return html.join('');
+}
+
+// ── Scroll engine ──
+// Sub-pixel accumulator + time-based: speed * 30 px/s (speed 1 = 30px/s, speed 5 = 150px/s)
+
+let scrollAccum = 0;
+let lastScrollTime = null;
+
+function scrollStep(timestamp) {
+  if (!state.playing || state.paused) {
+    state.animFrameId = null;
+    lastScrollTime = null;
+    return;
+  }
+
+  if (lastScrollTime === null) lastScrollTime = timestamp;
+  const elapsed = Math.min(timestamp - lastScrollTime, 100);
+  lastScrollTime = timestamp;
+
+  scrollAccum += state.speed * 30 * (elapsed / 1000);
 
   const maxScroll = contentWrapper.scrollHeight - contentWrapper.clientHeight;
-
   if (contentWrapper.scrollTop >= maxScroll) {
     stopScroll(true);
     return;
   }
 
-  contentWrapper.scrollTop += state.speed * 0.5;
-  updateProgress();
+  const intPx = Math.floor(scrollAccum);
+  if (intPx > 0) {
+    scrollAccum -= intPx;
+    contentWrapper.scrollTop += intPx;
+    updateProgress();
+  }
+
   state.animFrameId = requestAnimationFrame(scrollStep);
 }
 
@@ -157,6 +219,8 @@ function startScroll() {
   btnStartStop.textContent = '⏸';
   btnStartStop.setAttribute('aria-label', 'Pause');
   scriptEl.contentEditable = 'false';
+  scriptEl.innerHTML = parseMarkdown(state.script);
+  scriptEl.classList.add('md-rendered');
   state.animFrameId = requestAnimationFrame(scrollStep);
 }
 
@@ -166,6 +230,10 @@ function stopScroll(atEnd = false) {
   state.atEnd = atEnd;
   cancelAnimationFrame(state.animFrameId);
   state.animFrameId = null;
+  scrollAccum = 0;
+  lastScrollTime = null;
+  scriptEl.classList.remove('md-rendered');
+  scriptEl.textContent = state.script;
   btnStartStop.textContent = atEnd ? '↑' : '▶';
   btnStartStop.setAttribute('aria-label', atEnd ? 'Back to top' : 'Play');
   scriptEl.contentEditable = 'true';
