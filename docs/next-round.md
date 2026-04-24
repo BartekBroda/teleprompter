@@ -1,40 +1,88 @@
-# Next round — known issues & planned work
+# Next round — planned work
 
-## Bugs / UX gaps to address
+## Known issues (remaining)
 
 ### Scroll engine
-- Speed slider shows decimal like `2` but could show `1.5` — verify display looks OK on all values (0.5 step)
-- `scrollAccum` not reset when user manually drags scroll position mid-play — low priority, minor visual glitch at most
+- `scrollAccum` not reset when user manually drags scroll position mid-play — accumulator holds fractional remainder from before the drag; could cause 1px jump on resume. Low priority, not perceptible in practice.
 
 ### Markdown
-- `*italic*` regex will false-positive on standalone `*` (e.g. bullet `* item`) — currently `* item` renders as broken italic; either support `- item` bullets or tighten regex to require non-space after opening `*`
-- No support for `- item` / `* item` bullet lists — useful for cue lists
-- No support for line breaks within a paragraph (`  ` trailing spaces or `\` at end of line)
-- `## heading` matched by `/^(#{1,2})\s/` — headings with 3+ `#` fall through to plain `<p>`, fine for now but worth documenting
+- Bold/italic regexes use lazy `.*?` — pathological input with many `*` on one line could cause backtracking. Acceptable for teleprompter scripts; not a security issue (local storage only).
+- No support for nested inline: `***bold italic***` renders as bold wrapping italic incorrectly (outer `**` matches first, inner `*` left as literal). Niche use case.
 
 ### Margins
-- Right margin adds to existing ~60px progress-bar padding — at 200px setting the content area gets very narrow; consider capping effective right margin or decoupling from progress bar side
-- No per-side control (left vs right independent) — may be needed for mirror mode where reading direction reverses
+- `--user-margin` applies to `#script` padding, so in mirror mode (`scaleX(-1)` on `content-wrapper`) left/right visually swap — left margin becomes right margin. Functional but unintuitive. Fix: apply margin via `margin-inline-start/end` or flip values when mirror is active.
+
+---
 
 ## Planned features
 
-### Deployment / access
-- Decision pending: Cloudflare Pages + Access vs Capacitor + TestFlight
-- If Cloudflare: add `_headers` file for CSP and cache-control
-- If Capacitor: evaluate whether `contenteditable` works reliably in WKWebView (iOS)
+### Playback
 
-### Settings panel UX
-- Panel grows with each new control — consider grouping into sections (Appearance / Playback / Layout) or using a scrollable panel (already has `overflow-y: auto`, just needs content)
-- Slider labels could show units inline (e.g. "Speed 2 · 60px/s") for clarity
+**Countdown before start**
+3-2-1 overlay before scrolling begins. Gives presenter time to look up from the device. Implementation: show countdown div over content, `setTimeout` chain, then call `startScroll()`. Setting: on/off toggle, default on.
 
-### Markdown (future)
-- Bullet list support: `- item` → `<li>` inside `<ul>`
-- Syntax hint: small "MD supported" note below editor when empty placeholder shown
-- Consider toggling markdown off via settings for users who want literal `*` and `#` in scripts
+**Speed adjust during playback**
+`+` / `-` tap zones (left/right edges of screen, or hardware volume buttons via `MediaSession` API) to nudge speed ±0.5 without opening settings. Required for live use where settings modal is disruptive.
 
-## Architecture notes
+**Reading time estimate**
+Display estimated time to complete script at current speed, shown in settings panel. Formula: `contentWrapper.scrollHeight / (state.speed * 30)` seconds. Updates live as speed changes.
 
-- All state lives in `const state = {}` + localStorage — no framework, intentional
-- `parseMarkdown` / `inlineMarkdown` are pure functions, easy to unit-test if needed
-- `scrollStep` uses `requestAnimationFrame` timestamp — any future speed changes should preserve this (not revert to per-frame pixel increments)
-- `--user-margin` CSS custom property set on `:root` via `document.documentElement.style` — safe to extend with `--user-margin-left` / `--user-margin-right` independently
+**Loop mode**
+After reaching end, auto-scroll back to top and restart. Useful for rehearsal. Toggle in settings.
+
+### Editor
+
+**Text alignment — centered**
+Centered text is standard in broadcast teleprompter format. Add alignment toggle (left / center) in settings. Implementation: `text-align` on `#script`, persisted as `tp_align`. Single setting, no per-paragraph control needed.
+
+**Font selection**
+Three options sufficient: sans-serif (default), serif (formal/broadcast), monospace (technical scripts). Stored as `tp_font`. CSS: swap `font-family` on `#script`.
+
+**Syntax hint**
+When `#script` is empty, extend placeholder to show supported markdown syntax. Change placeholder text to multi-line hint, or add a collapsible "?" button near the editor.
+
+### Markdown
+
+**Nested block support**
+Currently flat line-by-line parse. Could add:
+- `> cue text` — director's cue line, rendered in muted color (not read aloud, visual reminder only)
+- `[pause]` — explicit pause marker rendered as a centered hourglass or dot row
+
+**Editor preview toggle**
+Button in overlay (or settings) to toggle between raw markdown and rendered preview while in edit mode. Useful for checking formatting before a take. Implementation: call `parseMarkdown` + set `innerHTML` + add `.md-rendered` without starting scroll; reverse on toggle off.
+
+### Settings panel
+
+**Section grouping**
+Panel is growing. Group controls:
+- *Appearance*: font size, font, theme, alignment
+- *Playback*: speed, countdown, loop
+- *Layout*: horizontal margin
+
+Use `<fieldset>` + `<legend>` or simple heading rows. No JS needed.
+
+**Reset to defaults button**
+Single button: clear all `tp_*` localStorage keys, reload. Useful after experimenting with settings.
+
+### Deployment (decision pending)
+
+**Option A — Cloudflare Pages + Access**
+Static deploy, email OTP access control. Free. PWA installs from the URL. Fastest path.
+- Add `public/_headers` for CSP and cache-control headers
+- Add `public/_redirects` if custom domain routing needed
+
+**Option B — Capacitor (iOS/Android native)**
+Wraps existing HTML/JS/CSS unchanged. No rewrite.
+- iOS: Xcode + Apple Developer ($99/yr) → TestFlight for private distribution (up to 100 internal testers, no App Store review)
+- Android: build APK, sideload or Play Store
+- Risk: verify `contenteditable` works correctly in WKWebView (iOS WebKit); known quirks with `textContent` assignment on focused elements
+
+---
+
+## Architecture constraints to preserve
+
+- `state` is the single source of truth; `localStorage` is write-through cache only
+- `scrollStep` must stay time-based (`requestAnimationFrame` timestamp) — never revert to per-frame pixel increments
+- `parseMarkdown` / `inlineMarkdown` are pure functions with no DOM access — keep testable
+- `--user-margin` on `:root` via `documentElement.style` — extend to `--user-margin-left` / `--user-margin-right` when per-side control is needed
+- No build step, no bundler, no framework — all changes must work as plain files served over HTTP

@@ -159,8 +159,9 @@ scriptEl.addEventListener('input', () => {
 
 function inlineMarkdown(text) {
   text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  text = text.replace(/\*\*(\S(?:.*?\S)?)\*\*/g, '<strong>$1</strong>');
+  // require non-space after opening * and before closing * to avoid matching bullet lines
+  text = text.replace(/\*(\S(?:.*?\S)?)\*/g, '<em>$1</em>');
   return text;
 }
 
@@ -171,6 +172,8 @@ function parseMarkdown(text) {
     if (t === '---') { html.push('<hr>'); continue; }
     const h = t.match(/^(#{1,2})\s+(.*)/);
     if (h) { const tag = h[1].length === 1 ? 'h1' : 'h2'; html.push(`<${tag}>${inlineMarkdown(h[2])}</${tag}>`); continue; }
+    const li = t.match(/^[-*]\s+(.*)/);
+    if (li) { html.push(`<p class="md-li">• ${inlineMarkdown(li[1])}</p>`); continue; }
     if (t === '') { html.push('<p class="md-gap"></p>'); continue; }
     html.push(`<p>${inlineMarkdown(t)}</p>`);
   }

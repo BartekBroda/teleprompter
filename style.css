@@ -52,10 +52,7 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  padding: max(40px, env(safe-area-inset-top) + 16px)
-           calc(max(60px, env(safe-area-inset-right) + 48px) + var(--user-margin, 0px))
-           200px
-           calc(max(20px, env(safe-area-inset-left) + 8px) + var(--user-margin, 0px));
+  padding: max(40px, env(safe-area-inset-top) + 16px) max(60px, env(safe-area-inset-right) + 48px) 200px max(20px, env(safe-area-inset-left) + 8px);
 }
 
 #content-wrapper.mirrored {
@@ -72,6 +69,7 @@ body {
   outline: none;
   white-space: pre-wrap;
   word-break: break-word;
+  padding: 0 var(--user-margin, 0px);
 }
 
 #script.md-rendered {
@@ -80,6 +78,7 @@ body {
 
 #script.md-rendered p { margin: 0; }
 #script.md-rendered p.md-gap { height: 0.6em; }
+#script.md-rendered p.md-li { padding-left: 1.2em; text-indent: -1.2em; }
 #script.md-rendered h1 { font-size: 1.25em; font-weight: 700; margin: 0.4em 0 0.2em; }
 #script.md-rendered h2 { font-size: 1.1em; font-weight: 600; margin: 0.3em 0 0.15em; }
 #script.md-rendered hr { border: none; border-top: 2px solid currentColor; opacity: 0.25; margin: 0.8em 0; }
