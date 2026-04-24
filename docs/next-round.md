@@ -1,16 +1,31 @@
 # Next round — planned work
 
+_Last updated: 2026-04-24_
+
+---
+
+## Completed (this session)
+
+- **Scroll engine rewrite** — time-based with sub-pixel accumulator (`scrollAccum`). Formula: `speed * 30 px/s`. Fixes speed 1 and 1.5 producing no movement (fractional `scrollTop` increments dropped by browser). Speed range narrowed to 0.5–5.
+- **Horizontal margin** — `--user-margin` CSS variable on `:root`, applied as `padding` on `#script`. Slider 0–200px, step 10. Stored as `tp_margin`.
+- **Markdown rendering** — plain text in editor, HTML during playback. Supported: `# h1`, `## h2`, `**bold**`, `*italic*`, `- bullet`, `* bullet`, `---` hr, blank line spacing. Parser: pure functions `parseMarkdown` / `inlineMarkdown`, XSS-safe.
+- **Bug: italic false-positive** — regex tightened to `\*(\S(?:.*?\S)?)\*`; `* item` no longer triggers italic.
+- **Bug: margin stacking** — moved `--user-margin` from `content-wrapper` calc (was compounding with 60px progress bar space) to `#script` padding.
+- **Bug: `* item` bullet** — lines matching `/^[-*]\s+/` now caught before italic pass and rendered as `• paragraph`.
+
+---
+
 ## Known issues (remaining)
 
 ### Scroll engine
-- `scrollAccum` not reset when user manually drags scroll position mid-play — accumulator holds fractional remainder from before the drag; could cause 1px jump on resume. Low priority, not perceptible in practice.
+- `scrollAccum` not reset when user manually drags scroll position mid-play — accumulator holds fractional remainder; could cause 1px jump on resume. Low priority, not perceptible in practice.
 
 ### Markdown
 - Bold/italic regexes use lazy `.*?` — pathological input with many `*` on one line could cause backtracking. Acceptable for teleprompter scripts; not a security issue (local storage only).
-- No support for nested inline: `***bold italic***` renders as bold wrapping italic incorrectly (outer `**` matches first, inner `*` left as literal). Niche use case.
+- Nested inline `***bold italic***` broken — outer `**` matches first, inner `*` left as literal. Niche use case.
 
 ### Margins
-- `--user-margin` applies to `#script` padding, so in mirror mode (`scaleX(-1)` on `content-wrapper`) left/right visually swap — left margin becomes right margin. Functional but unintuitive. Fix: apply margin via `margin-inline-start/end` or flip values when mirror is active.
+- In mirror mode (`scaleX(-1)` on `content-wrapper`) `--user-margin` left/right visually swap — left margin becomes right margin. Fix: flip values when `state.mirror` is active, or use `margin-inline-start/end` on `#script`.
 
 ---
 
@@ -63,7 +78,7 @@ function updateSyntaxHint() {
 }
 ```
 
-CSS: `#syntax-hint` styled muted (opacity ~0.35), smaller font (~0.5em of script font), pointer-events none. Table cells: `td:first-child` monospace, `td:last-child` normal. Both hidden in play mode via `.md-rendered ~ #syntax-hint` or by adding `hidden` before `startScroll`.
+CSS: `#syntax-hint` styled muted (opacity ~0.35), smaller font (~0.5em of script font), pointer-events none. Table cells: `td:first-child` monospace, `td:last-child` normal. Hidden in play mode via `startScroll` adding `hidden` before setting `innerHTML`.
 
 Reason for separate div over CSS `::before`: `::before` on `contenteditable` breaks on some mobile browsers when text is typed, and cannot contain structured HTML.
 
@@ -153,7 +168,7 @@ Wraps existing HTML/JS/CSS unchanged. No rewrite.
 
 ## Architecture constraints to preserve
 
-- `state` is the single source of truth; `localStorage` is write-through cache only
+- `state` is single source of truth; `localStorage` is write-through cache only
 - `scrollStep` must stay time-based (`requestAnimationFrame` timestamp) — never revert to per-frame pixel increments
 - `parseMarkdown` / `inlineMarkdown` are pure functions with no DOM access — keep testable
 - `--user-margin` on `:root` via `documentElement.style` — extend to `--user-margin-left` / `--user-margin-right` when per-side control is needed
