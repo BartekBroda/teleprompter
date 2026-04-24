@@ -39,9 +39,47 @@ Centered text is standard in broadcast teleprompter format. Add alignment toggle
 Three options sufficient: sans-serif (default), serif (formal/broadcast), monospace (technical scripts). Stored as `tp_font`. CSS: swap `font-family` on `#script`.
 
 **Syntax hint**
-When `#script` is empty, extend placeholder to show supported markdown syntax. Change placeholder text to multi-line hint, or add a collapsible "?" button near the editor.
+`data-placeholder` CSS trick only supports single-line text. When script is empty, show a separate `#syntax-hint` div with supported syntax — hide it the moment user starts typing.
+
+HTML: sibling of `#script` inside `content-wrapper`:
+```html
+<div id="syntax-hint" aria-hidden="true">
+  <p>Type or paste your script.</p>
+  <table>
+    <tr><td># Tytuł</td><td>nagłówek sekcji</td></tr>
+    <tr><td>## Podsekcja</td><td>mniejszy nagłówek</td></tr>
+    <tr><td>**tekst**</td><td>pogrubienie</td></tr>
+    <tr><td>*tekst*</td><td>kursywa</td></tr>
+    <tr><td>- punkt</td><td>lista punktowana</td></tr>
+    <tr><td>---</td><td>pauza / separator</td></tr>
+  </table>
+</div>
+```
+
+JS: toggle `hidden` class on `scriptEl` `input` event and on `applyState`:
+```js
+function updateSyntaxHint() {
+  syntaxHint.classList.toggle('hidden', state.script.length > 0);
+}
+```
+
+CSS: `#syntax-hint` styled muted (opacity ~0.35), smaller font (~0.5em of script font), pointer-events none. Table cells: `td:first-child` monospace, `td:last-child` normal. Both hidden in play mode via `.md-rendered ~ #syntax-hint` or by adding `hidden` before `startScroll`.
+
+Reason for separate div over CSS `::before`: `::before` on `contenteditable` breaks on some mobile browsers when text is typed, and cannot contain structured HTML.
 
 ### Markdown
+
+**Bullet lists — extended (basic done)**
+Currently `- item` / `* item` → `• paragraph` implemented. Remaining:
+
+Ordered lists — `1. item`, `2. item`:
+```js
+const oli = t.match(/^\d+\.\s+(.*)/);
+if (oli) { html.push(`<p class="md-oli">${counter}. ${inlineMarkdown(oli[1])}</p>`); continue; }
+```
+Counter needs to track across lines — requires minor parser state. CSS same hanging indent as `md-li`.
+
+Nested lists (1 level deep): would require look-ahead across lines, breaking the current single-pass loop. Defer until parser is refactored to work on blocks instead of individual lines.
 
 **Nested block support**
 Currently flat line-by-line parse. Could add:
@@ -54,12 +92,46 @@ Button in overlay (or settings) to toggle between raw markdown and rendered prev
 ### Settings panel
 
 **Section grouping**
-Panel is growing. Group controls:
-- *Appearance*: font size, font, theme, alignment
-- *Playback*: speed, countdown, loop
-- *Layout*: horizontal margin
+Panel grows with each new control. Current controls (6) + planned additions (font, alignment, countdown, loop) = ~10 controls — needs structure.
 
-Use `<fieldset>` + `<legend>` or simple heading rows. No JS needed.
+Proposed HTML using `<fieldset>`:
+```html
+<fieldset>
+  <legend>Wygląd</legend>
+  <!-- font size, font, theme, alignment -->
+</fieldset>
+<fieldset>
+  <legend>Odtwarzanie</legend>
+  <!-- speed, countdown toggle, loop toggle -->
+</fieldset>
+<fieldset>
+  <legend>Układ</legend>
+  <!-- horizontal margin -->
+</fieldset>
+```
+
+CSS additions:
+```css
+#settings-panel fieldset {
+  border: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+#settings-panel legend {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.5;
+  margin-bottom: 4px;
+}
+```
+
+No JS changes needed. Panel already has `overflow-y: auto` and `max-height: calc(100vh - 20px)` — scrolls naturally when content exceeds screen height.
+
+Order: Wygląd → Odtwarzanie → Układ → reset button at bottom. Appearance first because it's most commonly adjusted.
 
 **Reset to defaults button**
 Single button: clear all `tp_*` localStorage keys, reload. Useful after experimenting with settings.
